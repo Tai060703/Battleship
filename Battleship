@@ -1,0 +1,1261 @@
+.data	
+	mapPlayer1: .byte 0:49
+	mapPlayer2: .byte 0:49
+	welcome: .asciiz "      Welcome to BattleShip!"
+	playAgain: .asciiz" Do you want to play again?"
+	rule: .asciiz "                            Each player has a 7x7 map with index from 0 to 6.\nNumber of ships: each player will have exactly one 4x1, two 3x1 and three 2x1 ships."
+	StartGame: .asciiz "     The boards are all set.\n    Now we start the game!"
+	player1SetUp: .asciiz "Now it is time for player 1 to set up your board!"
+	player2SetUp: .asciiz "Now it is time for player 2 to set up your board!"
+	askRowPlaceBow: .asciiz "Enter the row of the bow of your ship."
+	askColPlaceBow: .asciiz "Enter the col of the bow of your ship."
+	askRowPlaceStern: .asciiz "Enter the row of the stern of your ship."
+	askColPlaceStern: .asciiz "Enter the col of the stern of your ship."
+	place32x1ships: .asciiz "      Place your 3 2x1 ships."
+	place23x1ships: .asciiz "      Place your 2 3x1 ships."
+	place4x1ship: .asciiz "      Place your 4x1 ship."
+	MapOnTerminal: .asciiz "Look at your map on terminal to check!"
+	errorOutOfBound: .asciiz "The value must be less then 7 and greater or equal to 0!"
+	errorOverlap: .asciiz "Your ship should not be overlapped!"
+	errorShipSize: .asciiz "The size of your ship is invalid!"
+	errorShipNotOnSameRowOrCol: .asciiz "Your ship's Bow and Stern should be on the same row or column!"
+	thongBaoPlayer1Turn: .asciiz "     It's player 1's turn to attack!\n    Your board is on the terminal."
+	thongBaoPlayer2Turn: .asciiz "     It's player 2's turn to attack!\n    Your board is on the terminal"
+	askRowAttack: .asciiz "Enter the row of the position you want to attack."
+	askColAttack: .asciiz "Enter the col of the position you want to attack."
+	hit: .asciiz "                     HIT!"
+	miss: .asciiz "                   MISS!"
+	player1Win: .asciiz "           PLAYER 1 WON!"
+	player2Win: .asciiz "           PLAYER 2 WON!"
+	newline: .asciiz"\n"
+	khoangCach: .asciiz "   "
+	gachngang: .asciiz"-----------------------------"
+	daumap: .asciiz "  |"
+	Player1Board: .asciiz "Player 1 Board: \n"
+	Player2Board: .asciiz "Player 2 Board: \n"
+.text
+	main:
+		li $v0, 55
+		la $a0, welcome
+		li $a1, 1
+		syscall
+		li $v0, 55
+		la $a0, rule
+		li $a1, 1
+		syscall
+		li $v0, 55
+		la $a0, player1SetUp
+		li $a1, 1
+		syscall
+SetUpPhase:		
+	setUpPlayer1:
+	li $v0, 55
+	la $a0, place32x1ships
+	li $a1, 1
+	syscall
+	li $t8, 0
+	jal printMapPlayer1
+	NhapVao3Thuyen2x11:
+	beq $t8, 3, KetThucNhapVao3Thuyen2x11
+		AskRowPlaceBow1:
+		li $v0 , 51
+		la $a0, askRowPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceBow1
+		jal outOfBound
+		j AskRowPlaceBow1
+		tiepTucRowPlaceBow1:
+		bge $a0, 0, nexttiepTucRowPlaceBow1
+		jal outOfBound
+		j AskRowPlaceBow1
+		nexttiepTucRowPlaceBow1:
+		move $t0, $a0	#t0 chua row
+		
+		AskColPlaceBow1:
+		li $v0, 51
+		la $a0, askColPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceBow1
+		jal outOfBound
+		j AskColPlaceBow1
+		tiepTucColPlaceBow1:
+		bge $a0, 0, nexttiepTucColPlaceBow1
+		jal outOfBound
+		j AskColPlaceBow1
+		nexttiepTucColPlaceBow1:
+		move $t1, $a0	#t0 chua row
+		
+		la $s0, mapPlayer1
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 1,tiepTuc2ColPlaceBow1
+		jal Overlap
+		j AskRowPlaceBow1
+		tiepTuc2ColPlaceBow1:
+		move $t5, $s0
+		AskRowPlaceStern1:
+		li $v0 , 51
+		la $a0, askRowPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceStern1
+		jal outOfBound
+		j AskRowPlaceStern1
+		tiepTucRowPlaceStern1:
+		bge $a0, 0, nexttiepTucRowPlaceStern1
+		jal outOfBound
+		j AskRowPlaceStern1
+		nexttiepTucRowPlaceStern1:
+		move $t2, $a0	#t0 chua row
+		
+		AskColPlaceStern1:
+		li $v0, 51
+		la $a0, askColPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceStern1
+		jal outOfBound
+		j AskColPlaceStern1
+		tiepTucColPlaceStern1:
+		bge $a0, 0, nexttiepTucColPlaceStern1
+		jal outOfBound
+		j AskColPlaceStern1
+		nexttiepTucColPlaceStern1:
+		move $t3, $a0	#t0 chua row
+		
+		la $s0, mapPlayer1
+		mul $t4, $t2, 7
+		add $t4, $t4, $t3	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		beq $t0, $t2, tiepTuc2ColPlaceStern1
+		beq $t1, $t3, tiepTuc2ColPlaceStern1
+		jal ShipNotOnSameRowOrCol
+		j AskRowPlaceBow1
+		tiepTuc2ColPlaceStern1:
+		bne $t6, 1,passcheckoverlap2x11
+		jal Overlap
+		j AskRowPlaceBow1
+		#CheckOverlap
+		passcheckoverlap2x11:
+		sub $t9, $t5, $s0
+		beq $t9, 1, HopLe2x1Ship1
+		beq $t9, -1, HopLe2x1Ship1
+		beq $t9, 7, HopLe2x1Ship1
+		beq $t9, -7, HopLe2x1Ship1
+		jal ShipSize
+		j AskRowPlaceBow1
+		HopLe2x1Ship1:
+		li $t7, 1
+		sb $t7, ($s0)
+		move $s0, $t5
+		sb $t7, ($s0)
+	
+	addi $t8, $t8, 1
+	jal printMapPlayer1
+	j NhapVao3Thuyen2x11
+	KetThucNhapVao3Thuyen2x11:
+	# NHAP THUYEN 3X1	
+	li $v0, 55
+	la $a0, place23x1ships
+	la $a1, 1
+	syscall
+	li $t8, 0
+	NhapVao2Thuyen3x11:
+	beq $t8, 2, KetThucNhapVao2Thuyen3x11
+		AskRowPlaceBow3x11:
+		li $v0 , 51
+		la $a0, askRowPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceBow3x11
+		jal outOfBound
+		j AskRowPlaceBow3x11
+		tiepTucRowPlaceBow3x11:
+		bge $a0, 0, nexttiepTucRowPlaceBow3x11
+		jal outOfBound
+		j AskRowPlaceBow3x11
+		nexttiepTucRowPlaceBow3x11:
+		move $t0, $a0	#t0 chua row
+		
+		AskColPlaceBow3x11:
+		li $v0, 51
+		la $a0, askColPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceBow3x11
+		jal outOfBound
+		j AskColPlaceBow3x11
+		tiepTucColPlaceBow3x11:
+		bge $a0, 0, nexttiepTucColPlaceBow3x11
+		jal outOfBound
+		j AskColPlaceBow3x11
+		nexttiepTucColPlaceBow3x11:
+		move $t1, $a0	#t0 chua row
+		
+		la $s0, mapPlayer1
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 1,tiepTuc2ColPlaceBow3x11
+		jal Overlap
+		j AskRowPlaceBow3x11
+		tiepTuc2ColPlaceBow3x11:
+		move $t5, $s0
+		
+		AskRowPlaceStern3x11:
+		li $v0 , 51
+		la $a0, askRowPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceStern3x11
+		jal outOfBound
+		j AskRowPlaceStern3x11
+		tiepTucRowPlaceStern3x11:
+		bge $a0, 0, nexttiepTucRowPlaceStern3x11
+		jal outOfBound
+		j AskRowPlaceStern3x11
+		nexttiepTucRowPlaceStern3x11:
+		move $t2, $a0	#t0 chua row
+		
+		AskColPlaceStern3x11:
+		li $v0, 51
+		la $a0, askColPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceStern3x11
+		jal outOfBound
+		j AskColPlaceStern3x11
+		tiepTucColPlaceStern3x11:
+		bge $a0, 0, nexttiepTucColPlaceStern3x11
+		jal outOfBound
+		j AskColPlaceStern3x11
+		nexttiepTucColPlaceStern3x11:
+		move $t3, $a0	#t0 chua row
+		
+		la $s0, mapPlayer1
+		mul $t4, $t2, 7
+		add $t4, $t4, $t3	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		beq $t0, $t2, tiepTuc2ColPlaceStern3x11
+		beq $t1, $t3, tiepTuc2ColPlaceStern3x11
+		jal ShipNotOnSameRowOrCol
+		j AskRowPlaceBow3x11
+		tiepTuc2ColPlaceStern3x11:
+		bne $t6, 1,passcheckoverlap3x11
+		jal Overlap
+		j AskRowPlaceBow3x11
+		passcheckoverlap3x11:
+		li $t7, 1
+		sub $t9, $s0, $t5
+		beq $t9, 2, Rs3x1Sub21
+		beq $t9, -2, Rs3x1Sub_21
+		beq $t9, 14, Rs3x1Sub141
+		beq $t9, -14, Rs3x1Sub_141
+		jal ShipSize
+		j AskRowPlaceBow3x11
+		Rs3x1Sub21:
+		addi $s2, $t5, 1
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub21
+		jal Overlap
+		j AskRowPlaceBow3x11
+		passRs3x1Sub21:
+		j HopLe3x1Ship1
+		Rs3x1Sub_21: 
+		addi $s2, $t5, -1
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub_21
+		jal Overlap
+		j AskRowPlaceBow3x11
+		passRs3x1Sub_21:
+		j HopLe3x1Ship1
+		Rs3x1Sub141:
+		addi $s2, $t5, 7
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub141
+		jal Overlap
+		j AskRowPlaceBow3x11
+		passRs3x1Sub141:
+		j HopLe3x1Ship1
+		Rs3x1Sub_141:
+		addi $s2, $t5, -7
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub_141
+		jal Overlap
+		j AskRowPlaceBow3x11
+		passRs3x1Sub_141:
+		HopLe3x1Ship1:
+		li $t7, 1
+		sb $t7, ($s0)
+		move $s0, $t5
+		sb $t7, ($s0)
+		move $s0, $s2
+		sb $t7, ($s0)
+	
+	addi $t8, $t8, 1
+	jal printMapPlayer1
+	j NhapVao2Thuyen3x11
+	KetThucNhapVao2Thuyen3x11:
+	
+	li $v0, 55
+	la $a0, place4x1ship
+	la $a1, 1
+	syscall
+	
+	NhapVaoThuyen4x11:
+		AskRowPlaceBow4x11:
+		li $v0 , 51
+		la $a0, askRowPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceBow4x11
+		jal outOfBound
+		j AskRowPlaceBow4x11
+		tiepTucRowPlaceBow4x11:
+		bge $a0, 0, nexttiepTucRowPlaceBow4x11
+		jal outOfBound
+		j AskRowPlaceBow4x11
+		nexttiepTucRowPlaceBow4x11:
+		move $t0, $a0	#t0 chua row
+		
+		AskColPlaceBow4x11:
+		li $v0, 51
+		la $a0, askColPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceBow4x11
+		jal outOfBound
+		j AskColPlaceBow4x11
+		tiepTucColPlaceBow4x11:
+		bge $a0, 0, nexttiepTucColPlaceBow4x11
+		jal outOfBound
+		j AskColPlaceBow4x11
+		nexttiepTucColPlaceBow4x11:
+		move $t1, $a0	#t1 chua col
+		
+		la $s0, mapPlayer1
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 1,tiepTuc2ColPlaceBow4x11
+		jal Overlap
+		j AskRowPlaceBow4x11
+		tiepTuc2ColPlaceBow4x11:
+		move $t5, $s0
+
+		AskRowPlaceStern4x11:
+		li $v0 , 51
+		la $a0, askRowPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceStern4x11
+		jal outOfBound
+		j AskRowPlaceStern4x11
+		tiepTucRowPlaceStern4x11:
+		bge $a0, 0, nexttiepTucRowPlaceStern4x11
+		jal outOfBound
+		j AskRowPlaceStern4x11
+		nexttiepTucRowPlaceStern4x11:
+		move $t2, $a0	#t2 chua row
+		
+		AskColPlaceStern4x11:
+		li $v0, 51
+		la $a0, askColPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceStern4x11
+		jal outOfBound
+		j AskColPlaceStern4x11
+		tiepTucColPlaceStern4x11:
+		bge $a0, 0, nexttiepTucColPlaceStern4x11
+		jal outOfBound
+		j AskColPlaceStern4x11
+		nexttiepTucColPlaceStern4x11:
+		move $t3, $a0	#t3 chua col
+		la $s0, mapPlayer1
+		mul $t4, $t2, 7
+		add $t4, $t4, $t3	#t4 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		beq $t0, $t2, tiepTuc2ColPlaceStern4x11
+		beq $t1, $t3, tiepTuc2ColPlaceStern4x11
+		jal ShipNotOnSameRowOrCol
+		j AskRowPlaceBow4x11
+		tiepTuc2ColPlaceStern4x11:
+		bne $t6, 1,passcheckoverlap4x11
+		jal Overlap
+		j AskRowPlaceBow4x11
+		passcheckoverlap4x11:
+		li $t7, 1
+		sub $t9, $s0, $t5
+		beq $t9, 3, Rs4x1Sub31
+		beq $t9, -3, Rs4x1Sub_31
+		beq $t9, 21, Rs4x1Sub211
+		beq $t9, -21, Rs4x1Sub_211
+		jal ShipSize
+		j AskRowPlaceBow4x11
+		Rs4x1Sub31:
+			addi $s2, $t5, 1
+			addi $s3, $s2, 1
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub31
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passMotNuaRs4x1Sub31:
+				bne $s7, 1, passRs4x1Sub31
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passRs4x1Sub31:
+				j HopLe4x1Ship1
+		Rs4x1Sub_31: 
+			addi $s2, $t5, -1
+			addi $s3, $s2, -1
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub_31
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passMotNuaRs4x1Sub_31:
+				bne $s7, 1, passRs4x1Sub_31
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passRs4x1Sub_31:
+				j HopLe4x1Ship1
+		Rs4x1Sub211:
+			addi $s2, $t5, 7
+			addi $s3, $s2, 7
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub211
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passMotNuaRs4x1Sub211:
+				bne $s7, 1, passRs4x1Sub211
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passRs4x1Sub211:
+				j HopLe4x1Ship1
+		j HopLe4x1Ship1
+		Rs4x1Sub_211:
+			addi $s2, $t5, -7
+			addi $s3, $s2, -7
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub_211
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passMotNuaRs4x1Sub_211:
+				bne $s7, 1, passRs4x1Sub_211
+				jal Overlap
+				j AskRowPlaceBow4x11
+			passRs4x1Sub_211:
+				j HopLe4x1Ship1
+		HopLe4x1Ship1:
+		li $t7, 1
+		sb $t7, ($s0)
+		move $s0, $t5
+		sb $t7, ($s0)
+		move $s0, $s2
+		sb $t7, ($s0)
+		sb $t7, ($s3)
+	KetThucSetUpPlayer1:
+	
+	
+	
+		jal printMapPlayer1
+		li $v0, 55
+		la $a0, MapOnTerminal
+		li $a1, 1
+		syscall
+		jal clearScreen
+	
+		li $v0, 55
+		la $a0, player2SetUp
+		li $a1, 1
+		syscall
+	
+	
+	
+	setUpPlayer2:
+	li $v0, 55
+	la $a0, place32x1ships
+	li $a1, 1
+	syscall
+	li $t8, 0
+	jal printMapPlayer2
+	NhapVao3Thuyen2x12:
+	beq $t8, 3, KetThucNhapVao3Thuyen2x12
+		AskRowPlaceBow2:
+		li $v0 , 51
+		la $a0, askRowPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceBow2
+		jal outOfBound
+		j AskRowPlaceBow2
+		tiepTucRowPlaceBow2:
+		bge $a0, 0, nexttiepTucRowPlaceBow2
+		jal outOfBound
+		j AskRowPlaceBow2
+		nexttiepTucRowPlaceBow2:
+		move $t0, $a0	#t0 chua row
+		
+		AskColPlaceBow2:
+		li $v0, 51
+		la $a0, askColPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceBow2
+		jal outOfBound
+		j AskColPlaceBow2
+		tiepTucColPlaceBow2:
+		bge $a0, 0, nexttiepTucColPlaceBow2
+		jal outOfBound
+		j AskColPlaceBow2
+		nexttiepTucColPlaceBow2:
+		move $t1, $a0	#t0 chua row
+		
+		la $s0, mapPlayer2
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 1,tiepTuc2ColPlaceBow2
+		jal Overlap
+		j AskRowPlaceBow2
+		tiepTuc2ColPlaceBow2:
+		move $t5, $s0
+		AskRowPlaceStern2:
+		li $v0 , 51
+		la $a0, askRowPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceStern2
+		jal outOfBound
+		j AskRowPlaceStern2
+		tiepTucRowPlaceStern2:
+		bge $a0, 0, nexttiepTucRowPlaceStern2
+		jal outOfBound
+		j AskRowPlaceStern2
+		nexttiepTucRowPlaceStern2:
+		move $t2, $a0	#t0 chua row
+		
+		AskColPlaceStern2:
+		li $v0, 51
+		la $a0, askColPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceStern2
+		jal outOfBound
+		j AskColPlaceStern2
+		tiepTucColPlaceStern2:
+		bge $a0, 0, nexttiepTucColPlaceStern2
+		jal outOfBound
+		j AskColPlaceStern2
+		nexttiepTucColPlaceStern2:
+		move $t3, $a0	#t0 chua row
+		
+		la $s0, mapPlayer2
+		mul $t4, $t2, 7
+		add $t4, $t4, $t3	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		beq $t0, $t2, tiepTuc2ColPlaceStern2
+		beq $t1, $t3, tiepTuc2ColPlaceStern2
+		jal ShipNotOnSameRowOrCol
+		j AskRowPlaceBow2
+		tiepTuc2ColPlaceStern2:
+		bne $t6, 1,passcheckoverlap2x12
+		jal Overlap
+		j AskRowPlaceBow2
+		#CheckOverlap
+		passcheckoverlap2x12:
+		sub $t9, $t5, $s0
+		beq $t9, 1, HopLe2x1Ship2
+		beq $t9, -1, HopLe2x1Ship2
+		beq $t9, 7, HopLe2x1Ship2
+		beq $t9, -7, HopLe2x1Ship2
+		jal ShipSize
+		j AskRowPlaceBow2
+		HopLe2x1Ship2:
+		li $t7, 1
+		sb $t7, ($s0)
+		move $s0, $t5
+		sb $t7, ($s0)
+	
+	addi $t8, $t8, 1
+	jal printMapPlayer2
+	j NhapVao3Thuyen2x12
+	KetThucNhapVao3Thuyen2x12:
+	# NHAP THUYEN 3X1	
+	li $v0, 55
+	la $a0, place23x1ships
+	la $a1, 1
+	syscall
+	li $t8, 0
+	NhapVao2Thuyen3x12:
+	beq $t8, 2, KetThucNhapVao2Thuyen3x12
+		AskRowPlaceBow3x12:
+		li $v0 , 51
+		la $a0, askRowPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceBow3x12
+		jal outOfBound
+		j AskRowPlaceBow3x12
+		tiepTucRowPlaceBow3x12:
+		bge $a0, 0, nexttiepTucRowPlaceBow3x12
+		jal outOfBound
+		j AskRowPlaceBow3x12
+		nexttiepTucRowPlaceBow3x12:
+		move $t0, $a0	#t0 chua row
+		
+		AskColPlaceBow3x12:
+		li $v0, 51
+		la $a0, askColPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceBow3x12
+		jal outOfBound
+		j AskColPlaceBow3x12
+		tiepTucColPlaceBow3x12:
+		bge $a0, 0, nexttiepTucColPlaceBow3x12
+		jal outOfBound
+		j AskColPlaceBow3x12
+		nexttiepTucColPlaceBow3x12:
+		move $t1, $a0	
+		
+		la $s0, mapPlayer2
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 1,tiepTuc2ColPlaceBow3x12
+		jal Overlap
+		j AskRowPlaceBow3x12
+		tiepTuc2ColPlaceBow3x12:
+		move $t5, $s0				
+		AskRowPlaceStern3x12:
+		li $v0 , 51
+		la $a0, askRowPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceStern3x12
+		jal outOfBound
+		j AskRowPlaceStern3x12
+		tiepTucRowPlaceStern3x12:
+		bge $a0, 0, nexttiepTucRowPlaceStern3x12
+		jal outOfBound
+		j AskRowPlaceStern3x12
+		nexttiepTucRowPlaceStern3x12:
+		move $t2, $a0	#t0 chua row
+		
+		AskColPlaceStern3x12:
+		li $v0, 51
+		la $a0, askColPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceStern3x12
+		jal outOfBound
+		j AskColPlaceStern3x12
+		tiepTucColPlaceStern3x12:
+		bge $a0, 0, nexttiepTucColPlaceStern3x12
+		jal outOfBound
+		j AskColPlaceStern3x12
+		nexttiepTucColPlaceStern3x12:
+		move $t3, $a0	#t0 chua row
+		
+		la $s0, mapPlayer2
+		mul $t4, $t2, 7
+		add $t4, $t4, $t3	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		beq $t0, $t2, tiepTuc2ColPlaceStern3x12
+		beq $t1, $t3, tiepTuc2ColPlaceStern3x12
+		jal ShipNotOnSameRowOrCol
+		j AskRowPlaceBow3x12
+		tiepTuc2ColPlaceStern3x12:
+		bne $t6, 1,passcheckoverlap3x12
+		jal Overlap
+		j AskRowPlaceBow3x12
+		passcheckoverlap3x12:
+		li $t7, 1
+		sub $t9, $s0, $t5
+		beq $t9, 2, Rs3x1Sub22
+		beq $t9, -2, Rs3x1Sub_22
+		beq $t9, 14, Rs3x1Sub142
+		beq $t9, -14, Rs3x1Sub_142
+		jal ShipSize
+		j AskRowPlaceBow3x12
+		Rs3x1Sub22:
+		addi $s2, $t5, 1
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub22
+		jal Overlap
+		j AskRowPlaceBow3x12
+		passRs3x1Sub22:
+		j HopLe3x1Ship2
+		Rs3x1Sub_22: 
+		addi $s2, $t5, -1
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub_22
+		jal Overlap
+		j AskRowPlaceBow3x12
+		passRs3x1Sub_22:
+		j HopLe3x1Ship2
+		Rs3x1Sub142:
+		addi $s2, $t5, 7
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub142
+		jal Overlap
+		j AskRowPlaceBow3x12
+		passRs3x1Sub142:
+		j HopLe3x1Ship2
+		Rs3x1Sub_142:
+		addi $s2, $t5, -7
+		lb $s7, ($s2)
+		bne $s7 , 1, passRs3x1Sub_142
+		jal Overlap
+		j AskRowPlaceBow3x12
+		passRs3x1Sub_142:
+		HopLe3x1Ship2:
+		li $t7, 1
+		sb $t7, ($s0)
+		move $s0, $t5
+		sb $t7, ($s0)
+		move $s0, $s2
+		sb $t7, ($s0)
+	
+	addi $t8, $t8, 1
+	jal printMapPlayer2
+	j NhapVao2Thuyen3x12
+	KetThucNhapVao2Thuyen3x12:
+	
+	li $v0, 55
+	la $a0, place4x1ship
+	la $a1, 1
+	syscall
+	
+	NhapVaoThuyen4x12:
+		AskRowPlaceBow4x12:
+		li $v0 , 51
+		la $a0, askRowPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceBow4x12
+		jal outOfBound
+		j AskRowPlaceBow4x12
+		tiepTucRowPlaceBow4x12:
+		bge $a0, 0, nexttiepTucRowPlaceBow4x12
+		jal outOfBound
+		j AskRowPlaceBow4x12
+		nexttiepTucRowPlaceBow4x12:
+		move $t0, $a0	#t0 chua row
+		
+		AskColPlaceBow4x12:
+		li $v0, 51
+		la $a0, askColPlaceBow
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceBow4x12
+		jal outOfBound
+		j AskColPlaceBow4x12
+		tiepTucColPlaceBow4x12:
+		bge $a0, 0, nexttiepTucColPlaceBow4x12
+		jal outOfBound
+		j AskColPlaceBow4x12
+		nexttiepTucColPlaceBow4x12:
+		move $t1, $a0	#t1 chua col
+		
+		la $s0, mapPlayer2
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 1,tiepTuc2ColPlaceBow4x12
+		jal Overlap
+		j AskRowPlaceBow4x12
+		tiepTuc2ColPlaceBow4x12:
+		move $t5, $s0
+		AskRowPlaceStern4x12:
+		li $v0 , 51
+		la $a0, askRowPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowPlaceStern4x12
+		jal outOfBound
+		j AskRowPlaceStern4x12
+		tiepTucRowPlaceStern4x12:
+		bge $a0, 0, nexttiepTucRowPlaceStern4x12
+		jal outOfBound
+		j AskRowPlaceStern4x12
+		nexttiepTucRowPlaceStern4x12:
+		move $t2, $a0	#t2 chua row
+		
+		AskColPlaceStern4x12:
+		li $v0, 51
+		la $a0, askColPlaceStern
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColPlaceStern4x12
+		jal outOfBound
+		j AskColPlaceStern4x12
+		tiepTucColPlaceStern4x12:
+		bge $a0, 0, nexttiepTucColPlaceStern4x12
+		jal outOfBound
+		j AskColPlaceStern4x12
+		nexttiepTucColPlaceStern4x12:
+		move $t3, $a0	#t3 chua col
+		
+		la $s0, mapPlayer2
+		mul $t4, $t2, 7
+		add $t4, $t4, $t3	#t4 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		beq $t0, $t2, tiepTuc2ColPlaceStern4x12
+		beq $t1, $t3, tiepTuc2ColPlaceStern4x12
+		jal ShipNotOnSameRowOrCol
+		j AskRowPlaceBow4x12
+		tiepTuc2ColPlaceStern4x12:
+		bne $t6, 1,passcheckoverlap4x12
+		jal Overlap
+		j AskRowPlaceBow4x12
+		passcheckoverlap4x12:
+		li $t7, 1
+		sub $t9, $s0, $t5
+		beq $t9, 3, Rs4x1Sub32
+		beq $t9, -3, Rs4x1Sub_32
+		beq $t9, 21, Rs4x1Sub212
+		beq $t9, -21, Rs4x1Sub_212
+		jal ShipSize
+		j AskRowPlaceBow4x12
+		Rs4x1Sub32:
+			addi $s2, $t5, 1
+			addi $s3, $s2, 1
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub32
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passMotNuaRs4x1Sub32:
+				bne $s7, 1, passRs4x1Sub32
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passRs4x1Sub32:
+				j HopLe4x1Ship2
+		Rs4x1Sub_32: 
+			addi $s2, $t5, -1
+			addi $s3, $s2, -1
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub_32
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passMotNuaRs4x1Sub_32:
+				bne $s7, 1, passRs4x1Sub_32
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passRs4x1Sub_32:
+				j HopLe4x1Ship2
+		Rs4x1Sub212:
+			addi $s2, $t5, 7
+			addi $s3, $s2, 7
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub212
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passMotNuaRs4x1Sub212:
+				bne $s7, 1, passRs4x1Sub212
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passRs4x1Sub212:
+				j HopLe4x1Ship2
+		j HopLe4x1Ship2
+		Rs4x1Sub_212:
+			addi $s2, $t5, -7
+			addi $s3, $s2, -7
+			lb $s6, ($s2)
+			lb $s7, ($s3)
+				bne $s6, 1, passMotNuaRs4x1Sub_212
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passMotNuaRs4x1Sub_212:
+				bne $s7, 1, passRs4x1Sub_212
+				jal Overlap
+				j AskRowPlaceBow4x12
+			passRs4x1Sub_212:
+				j HopLe4x1Ship2
+		HopLe4x1Ship2:
+		li $t7, 1
+		sb $t7, ($s0)
+		move $s0, $t5
+		sb $t7, ($s0)
+		move $s0, $s2
+		sb $t7, ($s0)
+		sb $t7, ($s3)
+	KetThucSetUpPlayer2:
+		jal printMapPlayer2
+		li $v0, 55
+		la $a0, MapOnTerminal
+		li $a1, 1
+		syscall
+		jal clearScreen
+	KetThucSetUpPhase:
+		li $v0, 55
+		la $a0, StartGame
+		li $a1, 1
+		syscall	
+player1Turn:
+	jal clearScreen
+	li $v0, 55
+	la $a0, thongBaoPlayer1Turn
+	la $a1, 1
+	syscall
+	jal printMapPlayer1
+		AskRowAttack1:
+		li $v0 , 51
+		la $a0, askRowAttack
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowAttack1
+		jal outOfBound
+		j AskRowAttack1
+		tiepTucRowAttack1:
+		bge $a0, 0, nexttiepTucRowAttack1
+		jal outOfBound
+		j AskRowAttack1
+		nexttiepTucRowAttack1:
+		move $t0, $a0	#t0 chua row
+		
+		AskColAttack1:
+		li $v0, 51
+		la $a0, askColAttack
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColAttack1
+		jal outOfBound
+		j AskColAttack1
+		tiepTucColAttack1:
+		bge $a0, 0, nexttiepTucColAttack1
+		jal outOfBound
+		j AskColAttack1
+		nexttiepTucColAttack1:
+		move $t1, $a0	#t0 chua row
+		
+		la $s0, mapPlayer2
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 0,tiepTuc2ColAttack1
+		jal Miss
+		j player2Turn
+		tiepTuc2ColAttack1:
+		jal Hit
+		li $t7, 0
+		sb $t7, ($s0)
+		la $s0, mapPlayer2
+		li $t2, 0
+		checkWin1:
+		beq $t2, 49, Player1Win
+		lb $t3, ($s0)
+		beq $t3, 1, player2Turn
+		addi $t2, $t2, 1
+		addi $s0, $s0, 1
+		j checkWin1
+
+
+player2Turn:
+	jal clearScreen
+	li $v0, 55
+	la $a0, thongBaoPlayer2Turn
+	la $a1, 1
+	syscall
+	jal printMapPlayer2
+		AskRowAttack2:
+		li $v0 , 51
+		la $a0, askRowAttack
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucRowAttack2
+		jal outOfBound
+		j AskRowAttack2
+		tiepTucRowAttack2:
+		bge $a0, 0, nexttiepTucRowAttack2
+		jal outOfBound
+		j AskRowAttack2
+		nexttiepTucRowAttack2:
+		move $t0, $a0	#t0 chua row
+		
+		AskColAttack2:
+		li $v0, 51
+		la $a0, askColAttack
+		syscall
+		beq $a1, -2, EndGame
+		blt $a0, 7, tiepTucColAttack2
+		jal outOfBound
+		j AskColAttack2
+		tiepTucColAttack2:
+		bge $a0, 0, nexttiepTucColAttack2
+		jal outOfBound
+		j AskColAttack2
+		nexttiepTucColAttack2:
+		move $t1, $a0	#t0 chua row
+		
+		la $s0, mapPlayer1
+		mul $t4, $t0, 7
+		add $t4, $t4, $t1	#t0 chua index
+		add $s0, $s0, $t4
+		lb $t6, ($s0)
+		bne $t6, 0,tiepTuc2ColAttack2
+		jal Miss
+		j player1Turn
+		tiepTuc2ColAttack2:
+		jal Hit
+		li $t7, 0
+		sb $t7, ($s0)
+		la $s0, mapPlayer1
+		li $t2, 0
+		checkWin2:
+		beq $t2, 49, Player2Win
+		lb $t3, ($s0)
+		beq $t3, 1, player1Turn
+		addi $t2, $t2, 1
+		addi $s0, $s0, 1
+		j checkWin2
+Hit:
+	li $v0, 55
+	la $a0, hit
+	la $a1, 1
+	syscall
+	jr $ra
+Miss:	
+	li $v0, 55
+	la $a0, miss
+	la $a1, 1
+	syscall
+	jr $ra
+	
+printMapPlayer1:
+	li $v0, 4
+	la $a0, Player1Board
+	syscall
+	li $t0, 0	#index
+	li $t1, 0	
+	li $t3, 0
+	li $t4, 0       #index row
+	la $s0, mapPlayer1
+	li $v0, 4
+	la $a0, daumap
+	syscall
+	loop1printmapplayer1:
+		beq $t0, 7, outLoop1printmapplayer1
+		li $v0, 1
+		move $a0, $t0
+		syscall
+		li $v0,4
+		la $a0, khoangCach
+		syscall
+		addi $t0, $t0, 1
+		j loop1printmapplayer1
+	outLoop1printmapplayer1:
+	li $v0, 4
+	la $a0, newline
+	syscall
+	li $v0,4
+	la $a0, gachngang
+	syscall
+	li $v0,4
+	la $a0, newline
+	syscall
+	li $t0, 0
+	li $v0, 1
+	move $a0, $t4
+	syscall
+	li $v0, 11
+	li $a0, 32
+	syscall
+	li $v0, 11
+	li $a0, 124
+	syscall
+	addi $t4, $t4, 1
+	loopPrintmapplayer1:
+		beq $t0, 49, outLoopprintmapplayer1
+		blt $t1, 7, tiepTucprintmapplayer1
+		li $t1, 0
+		li $v0, 4
+		la $a0, newline
+		syscall
+		li $v0, 1
+		move $a0, $t4
+		syscall
+		li $v0, 11
+		li $a0, 32
+		syscall
+		li $v0, 11
+		li $a0, 124
+		syscall
+		addi $t4, $t4, 1
+		tiepTucprintmapplayer1:
+		li $v0, 1
+		lb $a0, ($s0)
+		syscall
+		li $v0,4
+		la $a0, khoangCach
+		syscall
+		addi $s0, $s0, 1
+		addi $t0, $t0, 1
+		addi $t1, $t1, 1
+		j loopPrintmapplayer1
+	outLoopprintmapplayer1:
+		li $v0, 4
+		la $a0, newline
+		syscall
+		jr $ra
+	
+	
+printMapPlayer2:
+	li $v0, 4
+	la $a0, Player2Board
+	syscall
+	
+	li $t0, 0	#index
+	li $t1, 0	
+	li $t3, 0
+	li $t4, 0       #index row
+	la $s0, mapPlayer2
+	li $v0, 4
+	la $a0, daumap
+	syscall
+	loopprintmapplayer2:
+		beq $t0, 7, outLoop1printmapplayer2
+		li $v0, 1
+		move $a0, $t0
+		syscall
+		li $v0,4
+		la $a0, khoangCach
+		syscall
+		addi $t0, $t0, 1
+		j loopprintmapplayer2
+	outLoop1printmapplayer2:
+	li $v0, 4
+	la $a0, newline
+	syscall
+	li $v0,4
+	la $a0, gachngang
+	syscall
+	li $v0,4
+	la $a0, newline
+	syscall
+	li $t0, 0
+	li $v0, 1
+	move $a0, $t4
+	syscall
+	li $v0, 11
+	li $a0, 32
+	syscall
+	li $v0, 11
+	li $a0, 124
+	syscall
+	addi $t4, $t4, 1
+	loopPrintmapplayer2:
+		beq $t0, 49, outLoop2printmapplayer2
+		blt $t1, 7, tiepTucprintmapplayer2
+		li $t1, 0
+		li $v0, 4
+		la $a0, newline
+		syscall
+		li $v0, 1
+		move $a0, $t4
+		syscall
+		li $v0, 11
+		li $a0, 32
+		syscall
+		li $v0, 11
+		li $a0, 124
+		syscall
+		addi $t4, $t4, 1
+		tiepTucprintmapplayer2:
+		li $v0, 1
+		lb $a0, ($s0)
+		syscall
+		li $v0,4
+		la $a0, khoangCach
+		syscall
+		addi $s0, $s0, 1
+		addi $t0, $t0, 1
+		addi $t1, $t1, 1
+		j loopPrintmapplayer2
+	outLoop2printmapplayer2:
+		li $v0, 4
+		la $a0, newline
+		syscall
+		jr $ra
+	
+	clearScreen:
+		li $t0, 0
+		clearScreen1:
+		beq $t0, 30, outLoopClear
+		li $v0, 11          # Print character
+   		li $a0, 10          # ASCII value of newline character (decimal 10)
+   		syscall
+   		addi $t0, $t0, 1
+   		j clearScreen1
+   		outLoopClear:
+   		jr $ra
+	Player1Win:
+		li $v0, 55
+		la $a0, player1Win
+		la $a1, 1
+		syscall
+		j PlayAgain
+	Player2Win:
+		li $v0, 55
+		la $a0, player2Win
+		la $a1, 1
+		syscall
+		j PlayAgain
+	EndGame:
+		li $v0, 10
+		syscall
+	PlayAgain:
+		li $v0, 50
+		la $a0, playAgain
+		syscall
+		beq $a0, 0, main
+		j EndGame
+	
+	outOfBound:
+		li $v0 ,55
+		la $a0, errorOutOfBound
+		la $a1, 2
+		syscall
+		jr $ra
+	Overlap:
+		li $v0, 55
+		la $a0, errorOverlap
+		la $a1, 2
+		syscall
+		jr $ra
+	ShipSize:
+		li $v0, 55
+		la $a0, errorShipSize
+		la $a1, 2
+		syscall
+		jr $ra
+	ShipNotOnSameRowOrCol:
+		li $v0, 55
+		la $a0, errorShipNotOnSameRowOrCol
+		la $a1, 2
+		syscall
+		jr $ra
